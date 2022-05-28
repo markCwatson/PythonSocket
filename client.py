@@ -1,26 +1,31 @@
 import socket
+import pickle
+import time
+import random
 
-HEADER = 64
+HEADER_SIZE = 5
 FORMAT = "utf-8"
-DISCONNECT_MESSAGE = "disconnect"
 
+ID = int(random.random()*1000)
 PORT = 5050
-SERVER = socket.gethostbyname(socket.gethostname()) # 192.168.2.40
+SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(ADDR)
 
-def send_msg(msg):
+def send_msg(data):
 
-    message = msg.encode(FORMAT)
-    msg_length = len(message)
-    send_length = str(msg_length).encode(FORMAT)
-    send_length += b' ' * (HEADER - len(send_length))
-    client.send(send_length)
+    message = pickle.dumps(data)
+    message = bytes(f'{len(message):<{HEADER_SIZE}}', FORMAT) + message
     client.send(message)
-    print(f"[CLIENT] echo from server: {client.recv(1024).decode(FORMAT)}")
+    print(f"[CLIENT] message sent to server: {data}")
 
-send_msg("hello")
-input()
-send_msg("disconnect")
+for i in range(3):
+    
+    data = {"ID":ID, "IP":SERVER, "port":PORT, "time":time.strftime("%H:%M:%S"), "data":f'this is data {i}', "disconnect":False}
+    send_msg(data)
+    time.sleep(2)
+
+data = {"ID":ID, "IP":SERVER, "port":PORT, "time":time.strftime("%H:%M:%S"), "data":None, "disconnect":True}
+send_msg(data)
